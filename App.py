@@ -8,7 +8,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# --- ESTILOS CSS (Efecto Blur y Botones Auto-ajustables) ---
+# --- ESTILOS CSS ---
 st.markdown("""
     <style>
     /* Estilo de la Carta (Base) */
@@ -18,7 +18,7 @@ st.markdown("""
         text-align: center;
         background-color: #FFF0F5;
         box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        height: 340px;
+        height: 350px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -50,20 +50,20 @@ st.markdown("""
         margin-bottom: 20px;
     }
 
-    /* Botones con altura automática para texto largo */
+    /* Botones con altura automática */
     div.stButton > button {
         width: 100%;
-        min-height: 60px; /* Altura mínima cómoda */
-        height: auto !important; /* Se estira si el texto es largo */
+        min-height: 60px;
+        height: auto !important;
         padding: 10px !important;
         border-radius: 12px;
         font-size: 16px;
         font-weight: 500;
-        white-space: pre-wrap; /* Permite saltos de línea en el botón */
+        white-space: pre-wrap;
         line-height: 1.4;
     }
     
-    /* Candado superpuesto (decorativo) */
+    /* Candado superpuesto */
     .lock-overlay {
         position: absolute;
         top: 50%; left: 50%;
@@ -114,7 +114,7 @@ GIFTS = [
     }
 ]
 
-# --- PREGUNTAS (ACTUALIZADAS) ---
+# --- PREGUNTAS ---
 questions = [
     {
         "q": "1. ¿En qué sitio he sido más feliz este año?",
@@ -161,11 +161,10 @@ if 'current_q' not in st.session_state:
 if 'final_choice' not in st.session_state:
     st.session_state.final_choice = None
 
-# --- FUNCIÓN PARA DIBUJAR CARTAS ---
+# --- FUNCIÓN DE DIBUJO DE CARTAS ---
 def draw_gifts():
-    st.write("### 🎁 Tus Opciones (Desbloquéalas):")
+    st.write("### 🎁 Tus Opciones (Desbloqueadas):")
     
-    # Distribución en columnas
     cols = st.columns(3)
     cols2 = st.columns(2)
     all_cols = cols + cols2 
@@ -176,27 +175,24 @@ def draw_gifts():
         is_unlocked = i < st.session_state.unlocked_count
         
         with col:
-            # Clase CSS condicionada
             container_class = "gift-card-container" + ("" if is_unlocked else " locked")
-            
-            # Si tiene link y está desbloqueado, lo mostramos
+            # Sin indentación para evitar el error de visualización
             link_html = f'<a href="{gift["link"]}" target="_blank" class="gift-link">Ver web 🔗</a>' if gift['link'] and is_unlocked else ''
             
-            # HTML de la carta
-            html = f"""
-            <div style="position: relative;">
-                {'<div class="lock-overlay">🔒</div>' if not is_unlocked else ''}
-                <div class="{container_class}">
-                    <div class="gift-title">{gift['title']}</div>
-                    <img src="{gift['img']}" style="width:100%; height:120px; object-fit:cover; border-radius:10px;">
-                    <div class="gift-desc">{gift['desc']}</div>
-                    {link_html}
-                </div>
-            </div>
-            """
-            st.markdown(html, unsafe_allow_html=True)
+            html_content = f"""
+<div style="position: relative;">
+    {'<div class="lock-overlay">🔒</div>' if not is_unlocked else ''}
+    <div class="{container_class}">
+        <div class="gift-title">{gift['title']}</div>
+        <img src="{gift['img']}" style="width:100%; height:120px; object-fit:cover; border-radius:10px;">
+        <div class="gift-desc">{gift['desc']}</div>
+        {link_html}
+    </div>
+</div>
+"""
+            st.markdown(html_content, unsafe_allow_html=True)
 
-# --- PANTALLA FINAL (ELECCIÓN) ---
+# --- PANTALLA FINAL (ELECCIÓN REALIZADA) ---
 if st.session_state.final_choice:
     st.balloons()
     chosen_gift = next(g for g in GIFTS if g['title'] == st.session_state.final_choice)
@@ -227,12 +223,7 @@ if st.session_state.final_choice:
 st.title("💖 Para María 💖")
 st.write("Demuestra cuánto me conoces para ver tus regalos.")
 
-# DIBUJAR TABLERO
-draw_gifts()
-
-st.write("---")
-
-# FASE DE TRIVIAL
+# 1. PARTE SUPERIOR: PREGUNTAS (TRIVIAL)
 if st.session_state.unlocked_count < 5:
     q_idx = st.session_state.current_q
     q_data = questions[q_idx]
@@ -240,12 +231,10 @@ if st.session_state.unlocked_count < 5:
     st.markdown(f'<div class="question-box">Pregunta {q_idx + 1}/5:<br>{q_data["q"]}</div>', unsafe_allow_html=True)
     
     options = q_data["options"]
-    
-    # Usamos 1 sola columna para las respuestas para asegurar que las largas se lean bien
     for opt in options:
         if st.button(opt, key=f"q{q_idx}_{opt}"):
             if opt == q_data["answer"]:
-                st.toast("✅ ¡Correcto! Carta desbloqueada.", icon="🔓")
+                st.toast("✅ ¡Correcto! Mira abajo 👇", icon="🔓")
                 time.sleep(0.8)
                 st.session_state.unlocked_count += 1
                 st.session_state.current_q += 1
@@ -253,7 +242,7 @@ if st.session_state.unlocked_count < 5:
             else:
                 st.error(q_data["error"])
 
-# FASE DE DECISIÓN
+# 2. PARTE SUPERIOR (ALTERNATIVA): SELECTOR FINAL
 else:
     st.success("🎉 ¡TODO DESBLOQUEADO!")
     st.markdown("### 🧐 Momento de la verdad:")
@@ -265,3 +254,8 @@ else:
     if st.button("🎁 CONFIRMAR ELECCIÓN", type="primary"):
         st.session_state.final_choice = choice
         st.rerun()
+
+st.write("---")
+
+# 3. PARTE INFERIOR: CARTAS DE REGALOS
+draw_gifts()
