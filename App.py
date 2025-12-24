@@ -26,11 +26,11 @@ st.markdown("""
         transition: all 0.3s ease;
     }
     
-    /* Cuando está BLOQUEADA: Borrosa y escala de grises */
+    /* Cuando está BLOQUEADA */
     .locked {
         filter: blur(5px) grayscale(80%);
         opacity: 0.6;
-        pointer-events: none; /* No se puede clicar */
+        pointer-events: none;
     }
     
     .gift-title { color: #C2185B; font-weight: bold; font-size: 17px; margin-bottom: 5px; height: 50px; display: flex; align-items: center; justify-content: center; line-height: 1.2;}
@@ -50,7 +50,7 @@ st.markdown("""
         margin-bottom: 20px;
     }
 
-    /* Botones con altura automática */
+    /* Botones */
     div.stButton > button {
         width: 100%;
         min-height: 60px;
@@ -161,7 +161,7 @@ if 'current_q' not in st.session_state:
 if 'final_choice' not in st.session_state:
     st.session_state.final_choice = None
 
-# --- FUNCIÓN DE DIBUJO DE CARTAS ---
+# --- FUNCIÓN DE DIBUJO ---
 def draw_gifts():
     st.write("### 🎁 Tus Opciones (Desbloqueadas):")
     
@@ -176,23 +176,14 @@ def draw_gifts():
         
         with col:
             container_class = "gift-card-container" + ("" if is_unlocked else " locked")
-            # Sin indentación para evitar el error de visualización
+            # El truco está aquí: Todo el HTML pegado a la izquierda sin espacios
             link_html = f'<a href="{gift["link"]}" target="_blank" class="gift-link">Ver web 🔗</a>' if gift['link'] and is_unlocked else ''
             
-            html_content = f"""
-<div style="position: relative;">
-    {'<div class="lock-overlay">🔒</div>' if not is_unlocked else ''}
-    <div class="{container_class}">
-        <div class="gift-title">{gift['title']}</div>
-        <img src="{gift['img']}" style="width:100%; height:120px; object-fit:cover; border-radius:10px;">
-        <div class="gift-desc">{gift['desc']}</div>
-        {link_html}
-    </div>
-</div>
-"""
+            html_content = f"""<div style="position: relative;">{'<div class="lock-overlay">🔒</div>' if not is_unlocked else ''}<div class="{container_class}"><div class="gift-title">{gift['title']}</div><img src="{gift['img']}" style="width:100%; height:120px; object-fit:cover; border-radius:10px;"><div class="gift-desc">{gift['desc']}</div>{link_html}</div></div>"""
+            
             st.markdown(html_content, unsafe_allow_html=True)
 
-# --- PANTALLA FINAL (ELECCIÓN REALIZADA) ---
+# --- PANTALLA FINAL ---
 if st.session_state.final_choice:
     st.balloons()
     chosen_gift = next(g for g in GIFTS if g['title'] == st.session_state.final_choice)
@@ -223,7 +214,7 @@ if st.session_state.final_choice:
 st.title("💖 Para María 💖")
 st.write("Demuestra cuánto me conoces para ver tus regalos.")
 
-# 1. PARTE SUPERIOR: PREGUNTAS (TRIVIAL)
+# 1. PREGUNTAS
 if st.session_state.unlocked_count < 5:
     q_idx = st.session_state.current_q
     q_data = questions[q_idx]
@@ -242,7 +233,7 @@ if st.session_state.unlocked_count < 5:
             else:
                 st.error(q_data["error"])
 
-# 2. PARTE SUPERIOR (ALTERNATIVA): SELECTOR FINAL
+# 2. SELECTOR FINAL (Solo aparece al acabar)
 else:
     st.success("🎉 ¡TODO DESBLOQUEADO!")
     st.markdown("### 🧐 Momento de la verdad:")
@@ -257,5 +248,5 @@ else:
 
 st.write("---")
 
-# 3. PARTE INFERIOR: CARTAS DE REGALOS
+# 3. CARTAS DE REGALO
 draw_gifts()
