@@ -8,42 +8,34 @@ st.set_page_config(
     layout="centered"
 )
 
-# --- ESTILOS CSS (Cartas de Regalo y Diseño Romántico) ---
+# --- ESTILOS CSS (Efecto Blur y Botones Auto-ajustables) ---
 st.markdown("""
     <style>
-    /* Estilo de la Carta DESBLOQUEADA */
-    .gift-card {
-        border: 2px solid #FF4081;
+    /* Estilo de la Carta (Base) */
+    .gift-card-container {
         border-radius: 15px;
         padding: 10px;
         text-align: center;
-        background-color: #FFF0F5; /* Rosa muy suave */
+        background-color: #FFF0F5;
         box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        height: 320px; /* Altura fija para que queden alineadas */
+        height: 340px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        transition: transform 0.2s;
+        border: 2px solid #FF4081;
+        transition: all 0.3s ease;
     }
-    .gift-card:hover { transform: scale(1.02); }
     
-    .gift-title { color: #C2185B; font-weight: bold; font-size: 18px; margin-bottom: 5px; height: 50px; display: flex; align-items: center; justify-content: center;}
-    .gift-desc { font-size: 14px; color: #555; margin-bottom: 10px; height: 60px; overflow: hidden;}
-    .gift-link { text-decoration: none; color: #FF4081; font-weight: bold; font-size: 12px;}
-
-    /* Estilo de la Carta BLOQUEADA */
-    .locked-card {
-        border: 2px dashed #999;
-        border-radius: 15px;
-        height: 320px;
-        background-color: #eee;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        color: #777;
+    /* Cuando está BLOQUEADA: Borrosa y escala de grises */
+    .locked {
+        filter: blur(5px) grayscale(80%);
+        opacity: 0.6;
+        pointer-events: none; /* No se puede clicar */
     }
-    .lock-icon { font-size: 50px; margin-bottom: 10px; }
+    
+    .gift-title { color: #C2185B; font-weight: bold; font-size: 17px; margin-bottom: 5px; height: 50px; display: flex; align-items: center; justify-content: center; line-height: 1.2;}
+    .gift-desc { font-size: 13px; color: #555; margin-bottom: 10px; height: 65px; overflow: hidden; display: flex; align-items: center; justify-content: center;}
+    .gift-link { text-decoration: none; color: #FF4081; font-weight: bold; font-size: 12px;}
 
     /* Caja de Pregunta */
     .question-box {
@@ -52,94 +44,112 @@ st.markdown("""
         padding: 20px;
         border-radius: 15px;
         text-align: center;
-        font-size: 20px;
+        font-size: 19px;
         font-weight: bold;
         color: #006064;
         margin-bottom: 20px;
     }
 
-    /* Botones */
+    /* Botones con altura automática para texto largo */
     div.stButton > button {
         width: 100%;
-        height: 50px !important;
-        border-radius: 10px;
+        min-height: 60px; /* Altura mínima cómoda */
+        height: auto !important; /* Se estira si el texto es largo */
+        padding: 10px !important;
+        border-radius: 12px;
         font-size: 16px;
-        font-weight: 600;
+        font-weight: 500;
+        white-space: pre-wrap; /* Permite saltos de línea en el botón */
+        line-height: 1.4;
+    }
+    
+    /* Candado superpuesto (decorativo) */
+    .lock-overlay {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 40px;
+        z-index: 10;
+        text-shadow: 0 0 10px white;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# --- DATOS DE LOS REGALOS (Las opciones) ---
-# He buscado imágenes genéricas de calidad para cada actividad
+# --- DATOS DE LOS REGALOS ---
 GIFTS = [
     {
         "id": "Gastro",
         "title": "🕵️‍♀️ Gastro Escape Room",
-        "desc": "Misterio y comida rica. Una experiencia diferente para resolver y saborear.",
-        "img": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1000&auto=format&fit=crop", # Restaurante misterioso
+        "desc": "Misterio y comida rica. Una experiencia diferente.",
+        "img": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1000&auto=format&fit=crop",
         "link": "https://gastroescaperoom.com/menu"
     },
     {
         "id": "Taller",
         "title": "🎨 Taller Creativo",
-        "desc": "Cerámica o Cocina. Tú eliges si mancharnos de barro o de harina.",
-        "img": "https://images.unsplash.com/photo-1610701596007-11502861dcfa?q=80&w=1000&auto=format&fit=crop", # Cerámica
+        "desc": "Cerámica o Cocina. Tú eliges si mancharnos de barro o harina.",
+        "img": "https://images.unsplash.com/photo-1610701596007-11502861dcfa?q=80&w=1000&auto=format&fit=crop",
         "link": ""
     },
     {
         "id": "Espectaculo",
         "title": "🎭 Noche de Espectáculo",
-        "desc": "El Rey León, Monólogos o Concierto Candlelight. Noche de cultura y emoción.",
-        "img": "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?q=80&w=1000&auto=format&fit=crop", # Evento
+        "desc": "Rey León, Monólogos o Teatro. Noche de cultura.",
+        "img": "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?q=80&w=1000&auto=format&fit=crop",
         "link": ""
     },
     {
         "id": "Survivor",
-        "title": "🏃‍♀️ Survivor Race (3km)",
-        "desc": "Barro, obstáculos y risas (o sufrimiento) juntos. ¿Aceptas el reto?",
-        "img": "https://images.unsplash.com/photo-1552674605-5d28c4e1902c?q=80&w=1000&auto=format&fit=crop", # Carrera obstáculos
+        "title": "🏃‍♀️ Survivor Race (3km) 👀",  
+        "desc": "Barro, obstáculos y risas. (Mi favorita, guiño guiño 😉).",
+        "img": "https://images.unsplash.com/photo-1552674605-5d28c4e1902c?q=80&w=1000&auto=format&fit=crop",
         "link": "https://survivor-race.com"
     },
     {
         "id": "Santoku",
         "title": "🍣 Experiencia Santoku",
-        "desc": "Alta cocina o experiencia gastronómica exclusiva que te mereces.",
-        "img": "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=1000&auto=format&fit=crop", # Sushi top
+        "desc": "Alta cocina o experiencia gastronómica exclusiva.",
+        "img": "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=1000&auto=format&fit=crop",
         "link": "https://www.san-toku.es"
     }
 ]
 
-# --- PREGUNTAS SOBRE VUESTRA RELACIÓN (¡EDITA ESTO!) ---
+# --- PREGUNTAS (ACTUALIZADAS) ---
 questions = [
     {
-        "q": "1. Para desbloquear el primer regalo... ¿Cuál es mi comida favorita?",
-        "options": ["Pizza", "Sushi", "Hamburguesa", "Lentejas"],
-        "answer": "Sushi", # <--- CAMBIA ESTO
-        "error": "❌ ¡Qué va! Eso me gusta, pero no es la favorita."
+        "q": "1. ¿En qué sitio he sido más feliz este año?",
+        "options": ["Rio Pisuerga", "Bar Néstor", "Playa de Muro", "Hotel Aura Logroño"],
+        "answer": "Bar Néstor",
+        "error": "❌ Frío... Allí se come la tortilla (y chuleta) de los dioses."
     },
     {
-        "q": "2. ¿Dónde fue nuestro primer viaje/escapada juntos?",
-        "options": ["Madrid", "Playa", "Montaña", "París"],
-        "answer": "Playa", # <--- CAMBIA ESTO
-        "error": "❌ ¡Ay qué memoria! Inténtalo de nuevo."
+        "q": "2. ¿Qué personalidad me ha durado más este año?",
+        "options": ["Crossfiter", "Runner", "Padelista", "Todas las anteriores son correctas"],
+        "answer": "Todas las anteriores son correctas",
+        "error": "❌ ¡Te quedas corta! Soy un hombre polifacético (y me canso rápido)."
     },
     {
-        "q": "3. Si tuviéramos un perro ahora mismo, ¿cómo le llamaría yo?",
-        "options": ["Toby", "Thor", "Coco", "Rex"],
-        "answer": "Thor", # <--- CAMBIA ESTO
-        "error": "❌ Nop. Ese nombre no me pega."
+        "q": "3. Si tuviéramos un perro, ¿cómo se llamaría?",
+        "options": ["Lalo", "Lala", "Lola", "Lolo"],
+        "answer": "Lolo",
+        "error": "❌ Casi... ¡tiene que hacer juego con mi nombre!"
     },
     {
         "q": "4. ¿Cuál es mi manía más rara?",
-        "options": ["El orden", "Ruidos al comer", "Dormir con calcetines", "Morder el boli"],
-        "answer": "El orden", # <--- CAMBIA ESTO
-        "error": "❌ Jaja, ojalá fuera esa, pero no."
+        "options": ["El orden extremo", "Cerrar las puertas con cuidado para que no haga ruido", "Dormir con calcetines", "Comer muy despacio"],
+        "answer": "Cerrar las puertas con cuidado para que no haga ruido",
+        "error": "❌ Ojalá fuera otra, pero no... soy el ninja de las puertas."
     },
     {
-        "q": "5. Última para desbloquear todo: ¿Cuánto te quiero?",
-        "options": ["Mucho", "Muchísimo", "Infinito", "Más que ayer pero menos que mañana"],
-        "answer": "Más que ayer pero menos que mañana", # <--- CAMBIA ESTO
-        "error": "❌ Todas son verdad, pero busco la más cursi."
+        "q": "5. Si me preguntas '¿Qué tal el día?', ¿cuál sería mi respuesta?",
+        "options": [
+            "Normal",
+            "Obviamente te respondería contándote TODO lo que me ha pasado en el día sin dejarme ni un detalle",
+            "Sin más",
+            "Bien"
+        ],
+        "answer": "Bien",
+        "error": "❌ Jajaja, ¡ojalá! Pero ya sabes que soy mucho más escueto."
     }
 ]
 
@@ -151,63 +161,63 @@ if 'current_q' not in st.session_state:
 if 'final_choice' not in st.session_state:
     st.session_state.final_choice = None
 
-# --- FUNCIÓN PARA DIBUJAR LAS CARTAS ---
+# --- FUNCIÓN PARA DIBUJAR CARTAS ---
 def draw_gifts():
-    st.write("### 🎁 Tus Opciones de Regalo:")
+    st.write("### 🎁 Tus Opciones (Desbloquéalas):")
     
-    # Organizamos en filas de 3 y 2
+    # Distribución en columnas
     cols = st.columns(3)
     cols2 = st.columns(2)
-    all_cols = cols + cols2 # Lista de 5 columnas
+    all_cols = cols + cols2 
     
     for i in range(5):
         gift = GIFTS[i]
         col = all_cols[i]
+        is_unlocked = i < st.session_state.unlocked_count
         
         with col:
-            if i < st.session_state.unlocked_count:
-                # CARTA DESBLOQUEADA
-                st.markdown(f"""
-                <div class="gift-card">
+            # Clase CSS condicionada
+            container_class = "gift-card-container" + ("" if is_unlocked else " locked")
+            
+            # Si tiene link y está desbloqueado, lo mostramos
+            link_html = f'<a href="{gift["link"]}" target="_blank" class="gift-link">Ver web 🔗</a>' if gift['link'] and is_unlocked else ''
+            
+            # HTML de la carta
+            html = f"""
+            <div style="position: relative;">
+                {'<div class="lock-overlay">🔒</div>' if not is_unlocked else ''}
+                <div class="{container_class}">
                     <div class="gift-title">{gift['title']}</div>
                     <img src="{gift['img']}" style="width:100%; height:120px; object-fit:cover; border-radius:10px;">
                     <div class="gift-desc">{gift['desc']}</div>
-                    <a href="{gift['link']}" target="_blank" class="gift-link">Ver web 🔗</a>
+                    {link_html}
                 </div>
-                """, unsafe_allow_html=True)
-            else:
-                # CARTA BLOQUEADA
-                st.markdown(f"""
-                <div class="locked-card">
-                    <div class="lock-icon">🔒</div>
-                    <div>Opción {i+1}</div>
-                    <small>Responde para abrir</small>
-                </div>
-                """, unsafe_allow_html=True)
+            </div>
+            """
+            st.markdown(html, unsafe_allow_html=True)
 
-# --- PANTALLA FINAL (ELECCIÓN HECHA) ---
+# --- PANTALLA FINAL (ELECCIÓN) ---
 if st.session_state.final_choice:
     st.balloons()
-    
-    # Buscar datos del regalo elegido
     chosen_gift = next(g for g in GIFTS if g['title'] == st.session_state.final_choice)
     
-    st.title("💖 ¡Regalo Elegido! 💖")
-    st.success(f"Has decidido que nos vamos a disfrutar de:")
+    st.title("💖 ¡Plan Elegido! 💖")
+    st.success(f"Nos vamos a disfrutar de:")
     
     st.image(chosen_gift['img'], use_column_width=True)
     st.markdown(f"<h2 style='text-align:center; color:#E91E63'>{chosen_gift['title']}</h2>", unsafe_allow_html=True)
     
-    if chosen_gift['id'] == "Survivor":
-        st.info("👟 Prepárate para ensuciarte y pasarlo en grande. ¡Yo voy contigo!")
-    elif chosen_gift['id'] == "Santoku":
-        st.info("🍣 Prepara el paladar, va a ser increíble.")
+    if "Survivor" in chosen_gift['title']:
+        st.info("😏 ¡Sabía que elegirías bien! Prepara las zapatillas viejas, que nos manchamos.")
+    elif "Néstor" in chosen_gift['desc']: 
+        st.info("🌮 ¡Tortilla time!")
     else:
-        st.info("📅 ¡Pues decidido! Lo organizamos para cuando tú me digas.")
+        st.info("📅 ¡Hecho! Lo organizamos en cuanto quieras.")
         
-    st.write(f"🔗 [Ver más detalles en su web]({chosen_gift['link']})")
+    if chosen_gift['link']:
+        st.write(f"🔗 [Ver detalles en su web]({chosen_gift['link']})")
     
-    if st.button("🔄 Volver a pensar"):
+    if st.button("🔄 Cambiar de opinión"):
         st.session_state.final_choice = None
         st.rerun()
     st.stop()
@@ -215,10 +225,9 @@ if st.session_state.final_choice:
 # --- INTERFAZ PRINCIPAL ---
 
 st.title("💖 Para María 💖")
-st.write("Tengo un regalo para ti, pero... ¡tienes que elegirlo tú!")
-st.write("Responde a las preguntas para desbloquear las 5 opciones ocultas.")
+st.write("Demuestra cuánto me conoces para ver tus regalos.")
 
-# DIBUJAR CARTAS
+# DIBUJAR TABLERO
 draw_gifts()
 
 st.write("---")
@@ -230,31 +239,29 @@ if st.session_state.unlocked_count < 5:
     
     st.markdown(f'<div class="question-box">Pregunta {q_idx + 1}/5:<br>{q_data["q"]}</div>', unsafe_allow_html=True)
     
-    col_opts = st.columns(2)
     options = q_data["options"]
     
-    for i, opt in enumerate(options):
-        # Distribuir botones en 2 columnas
-        if col_opts[i % 2].button(opt, key=f"q{q_idx}_{i}"):
+    # Usamos 1 sola columna para las respuestas para asegurar que las largas se lean bien
+    for opt in options:
+        if st.button(opt, key=f"q{q_idx}_{opt}"):
             if opt == q_data["answer"]:
-                st.toast("✅ ¡Correcto! Una opción desbloqueada.", icon="🔓")
-                time.sleep(1)
+                st.toast("✅ ¡Correcto! Carta desbloqueada.", icon="🔓")
+                time.sleep(0.8)
                 st.session_state.unlocked_count += 1
                 st.session_state.current_q += 1
                 st.rerun()
             else:
                 st.error(q_data["error"])
 
-# FASE DE ELECCIÓN FINAL
+# FASE DE DECISIÓN
 else:
-    st.success("🎉 ¡ENHORABUENA! Has desbloqueado todas las opciones.")
-    st.markdown("### 🧐 Ha llegado el momento de decidir:")
+    st.success("🎉 ¡TODO DESBLOQUEADO!")
+    st.markdown("### 🧐 Momento de la verdad:")
     
-    # Selector final
     gift_titles = [g['title'] for g in GIFTS]
-    choice = st.selectbox("Elige tu regalo favorito:", gift_titles)
+    choice = st.selectbox("Elige tu favorito:", gift_titles)
     
     st.write("")
-    if st.button("🎁 CONFIRMAR ESTE REGALO", type="primary"):
+    if st.button("🎁 CONFIRMAR ELECCIÓN", type="primary"):
         st.session_state.final_choice = choice
         st.rerun()
