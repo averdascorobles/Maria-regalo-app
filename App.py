@@ -1,5 +1,6 @@
 import streamlit as st
 import time
+from urllib.parse import quote
 
 # --- CONFIGURACIÓN DE LA PÁGINA ---
 st.set_page_config(
@@ -11,14 +12,15 @@ st.set_page_config(
 # --- ESTILOS CSS ---
 st.markdown("""
     <style>
-    /* Estilo de la Carta (Base) */
+    /* Estilo de la Carta */
     .gift-card-container {
         border-radius: 15px;
         padding: 10px;
         text-align: center;
         background-color: #FFF0F5;
         box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        height: 350px;
+        height: 100%; /* Altura flexible */
+        min-height: 360px; /* Altura mínima asegurada */
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -26,16 +28,45 @@ st.markdown("""
         transition: all 0.3s ease;
     }
     
-    /* Cuando está BLOQUEADA */
+    /* Efecto Borroso (Bloqueado) */
     .locked {
         filter: blur(5px) grayscale(80%);
         opacity: 0.6;
         pointer-events: none;
     }
     
-    .gift-title { color: #C2185B; font-weight: bold; font-size: 17px; margin-bottom: 5px; height: 50px; display: flex; align-items: center; justify-content: center; line-height: 1.2;}
-    .gift-desc { font-size: 13px; color: #555; margin-bottom: 10px; height: 65px; overflow: hidden; display: flex; align-items: center; justify-content: center;}
-    .gift-link { text-decoration: none; color: #FF4081; font-weight: bold; font-size: 12px;}
+    /* Título flexible */
+    .gift-title { 
+        color: #C2185B; 
+        font-weight: bold; 
+        font-size: 17px; 
+        margin-bottom: 8px; 
+        min-height: 50px; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        line-height: 1.3;
+    }
+    
+    .gift-desc { 
+        font-size: 13px; 
+        color: #555; 
+        margin-bottom: 10px; 
+        flex-grow: 1; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center;
+    }
+    
+    .gift-link { 
+        text-decoration: none; 
+        color: #FF4081; 
+        font-weight: bold; 
+        font-size: 12px;
+        display: block;
+        margin-top: auto; 
+        padding-top: 5px;
+    }
 
     /* Caja de Pregunta */
     .question-box {
@@ -63,7 +94,7 @@ st.markdown("""
         line-height: 1.4;
     }
     
-    /* Candado superpuesto */
+    /* Candado */
     .lock-overlay {
         position: absolute;
         top: 50%; left: 50%;
@@ -175,15 +206,33 @@ def draw_gifts():
         is_unlocked = i < st.session_state.unlocked_count
         
         with col:
-            container_class = "gift-card-container" + ("" if is_unlocked else " locked")
-            # El truco está aquí: Todo el HTML pegado a la izquierda sin espacios
-            link_html = f'<a href="{gift["link"]}" target="_blank" class="gift-link">Ver web 🔗</a>' if gift['link'] and is_unlocked else ''
+            # Construcción HTML por partes para evitar errores de renderizado
+            css_class = "gift-card-container"
+            if not is_unlocked:
+                css_class += " locked"
             
-            html_content = f"""<div style="position: relative;">{'<div class="lock-overlay">🔒</div>' if not is_unlocked else ''}<div class="{container_class}"><div class="gift-title">{gift['title']}</div><img src="{gift['img']}" style="width:100%; height:120px; object-fit:cover; border-radius:10px;"><div class="gift-desc">{gift['desc']}</div>{link_html}</div></div>"""
+            link_html = ""
+            if gift['link'] and is_unlocked:
+                link_html = f'<a href="{gift["link"]}" target="_blank" class="gift-link">Ver web 🔗</a>'
+            
+            lock_html = '<div class="lock-overlay">🔒</div>' if not is_unlocked else ''
+            
+            # HTML unido sin espacios para evitar bloque de código
+            html_content = (
+                f'<div style="position: relative;">'
+                f'{lock_html}'
+                f'<div class="{css_class}">'
+                f'<div class="gift-title">{gift["title"]}</div>'
+                f'<img src="{gift["img"]}" style="width:100%; height:120px; object-fit:cover; border-radius:10px;">'
+                f'<div class="gift-desc">{gift["desc"]}</div>'
+                f'{link_html}'
+                f'</div>'
+                f'</div>'
+            )
             
             st.markdown(html_content, unsafe_allow_html=True)
 
-# --- PANTALLA FINAL ---
+# --- PANTALLA FINAL (ELECCIÓN REALIZADA) ---
 if st.session_state.final_choice:
     st.balloons()
     chosen_gift = next(g for g in GIFTS if g['title'] == st.session_state.final_choice)
@@ -194,6 +243,7 @@ if st.session_state.final_choice:
     st.image(chosen_gift['img'], use_column_width=True)
     st.markdown(f"<h2 style='text-align:center; color:#E91E63'>{chosen_gift['title']}</h2>", unsafe_allow_html=True)
     
+    # Mensajes personalizados
     if "Survivor" in chosen_gift['title']:
         st.info("😏 ¡Sabía que elegirías bien! Prepara las zapatillas viejas, que nos manchamos.")
     elif "Néstor" in chosen_gift['desc']: 
@@ -203,6 +253,23 @@ if st.session_state.final_choice:
         
     if chosen_gift['link']:
         st.write(f"🔗 [Ver detalles en su web]({chosen_gift['link']})")
+    
+    st.write("---")
+    st.write("### 👇 PASO FINAL 👇")
+    st.write("Avísame para que vaya reservando:")
+
+    # --- BOTÓN DE WHATSAPP ---
+    TU_NUMERO = "34633085734" 
+    
+    # Preparamos el mensaje
+    mensaje = f"¡Hola Verdasco! Ya he decidido mi regalo: {chosen_gift['title']}. ¡Vamos a reservarlo! 😘"
+    
+    # Convertimos el mensaje para URL
+    mensaje_url = quote(mensaje)
+    whatsapp_link = f"https://wa.me/{TU_NUMERO}?text={mensaje_url}"
+    
+    st.link_button("📲 ENVIAR CONFIRMACIÓN A VERDASCO", whatsapp_link, type="primary")
+    # -------------------------
     
     if st.button("🔄 Cambiar de opinión"):
         st.session_state.final_choice = None
@@ -214,7 +281,7 @@ if st.session_state.final_choice:
 st.title("💖 Para María 💖")
 st.write("Demuestra cuánto me conoces para ver tus regalos.")
 
-# 1. PREGUNTAS
+# 1. PARTE SUPERIOR: PREGUNTAS
 if st.session_state.unlocked_count < 5:
     q_idx = st.session_state.current_q
     q_data = questions[q_idx]
@@ -233,7 +300,7 @@ if st.session_state.unlocked_count < 5:
             else:
                 st.error(q_data["error"])
 
-# 2. SELECTOR FINAL (Solo aparece al acabar)
+# 2. PARTE SUPERIOR (ALTERNATIVA): SELECTOR FINAL
 else:
     st.success("🎉 ¡TODO DESBLOQUEADO!")
     st.markdown("### 🧐 Momento de la verdad:")
@@ -248,5 +315,5 @@ else:
 
 st.write("---")
 
-# 3. CARTAS DE REGALO
+# 3. PARTE INFERIOR: CARTAS DE REGALOS
 draw_gifts()
