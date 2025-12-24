@@ -131,9 +131,10 @@ GIFTS = [
     },
     {
         "id": "Survivor",
+        # --- IMAGEN NUEVA Y CORRECTA ---
         "title": "🏃‍♀️ Survivor Race (3km) 👀",  
         "desc": "Barro, obstáculos y risas. (Mi favorita, guiño guiño 😉).",
-        "img": "https://images.unsplash.com/photo-1552674605-5d28c4e1902c?q=80&w=1000&auto=format&fit=crop",
+        "img": "https://images.unsplash.com/photo-1533561239780-46c157306013?q=80&w=1000&auto=format&fit=crop",
         "link": "https://survivor-race.com"
     },
     {
@@ -206,7 +207,6 @@ def draw_gifts():
         is_unlocked = i < st.session_state.unlocked_count
         
         with col:
-            # Construcción HTML por partes para evitar errores de renderizado
             css_class = "gift-card-container"
             if not is_unlocked:
                 css_class += " locked"
@@ -217,7 +217,6 @@ def draw_gifts():
             
             lock_html = '<div class="lock-overlay">🔒</div>' if not is_unlocked else ''
             
-            # HTML unido sin espacios para evitar bloque de código
             html_content = (
                 f'<div style="position: relative;">'
                 f'{lock_html}'
@@ -243,7 +242,6 @@ if st.session_state.final_choice:
     st.image(chosen_gift['img'], use_column_width=True)
     st.markdown(f"<h2 style='text-align:center; color:#E91E63'>{chosen_gift['title']}</h2>", unsafe_allow_html=True)
     
-    # Mensajes personalizados
     if "Survivor" in chosen_gift['title']:
         st.info("😏 ¡Sabía que elegirías bien! Prepara las zapatillas viejas, que nos manchamos.")
     elif "Néstor" in chosen_gift['desc']: 
@@ -259,12 +257,9 @@ if st.session_state.final_choice:
     st.write("Avísame para que vaya reservando:")
 
     # --- BOTÓN DE WHATSAPP ---
-    TU_NUMERO = "34633085734" 
+    TU_NUMERO = "34633095734" 
     
-    # Preparamos el mensaje
     mensaje = f"¡Hola Verdasco! Ya he decidido mi regalo: {chosen_gift['title']}. ¡Vamos a reservarlo! 😘"
-    
-    # Convertimos el mensaje para URL
     mensaje_url = quote(mensaje)
     whatsapp_link = f"https://wa.me/{TU_NUMERO}?text={mensaje_url}"
     
